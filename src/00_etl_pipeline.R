@@ -10,8 +10,14 @@
 # Authentication: gcloud ADC locally | GitHub Actions SA key in CI
 # =============================================================================
 
-library(tidyverse)
-
+# Ensure packages are available in CI environment
+if (!requireNamespace("tidyverse", quietly = TRUE)) {
+  install.packages(c(
+    "tidyverse", "ggplot2", "corrplot", "FactoMineR", "factoextra",
+    "gridExtra", "scales", "ggtext", "ggrepel", "caret", "glmnet",
+    "MASS", "googleCloudStorageR"
+  ), repos = "https://cloud.r-project.org", quiet = TRUE)
+}
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
