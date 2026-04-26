@@ -102,14 +102,10 @@ simulate_match <- function(team_a, team_b, knockout = FALSE) {
 # ---------------------------------------------------------------------------
 
 simulate_group_stage <- function(groups) {
-
   group_results <- map_dfr(names(groups), function(group_name) {
     teams <- groups[[group_name]]
-
-    # Round-robin: every team plays every other team once
     matchups <- combn(teams, 2, simplify = FALSE)
-
-    # Initialize points table
+    
     standings <- tibble(
       team   = teams,
       played = 0L,
@@ -121,43 +117,48 @@ simulate_group_stage <- function(groups) {
       points = 0L,
       group  = group_name
     )
-
+    
     for (matchup in matchups) {
       team_a <- matchup[1]
       team_b <- matchup[2]
-
-      res <- simulate_match(team_a, team_b, knockout = FALSE)
-
-      # Simulate scoreline for goal difference tracking
+      
       feats_a <- squad_features %>% filter(team == team_a)
       feats_b <- squad_features %>% filter(team == team_b)
-
-      lambda_a <- ifelse(nrow(feats_a) > 0,
-                         predict(final_model,
-                                 newdata = tibble(
-                                   team_xg_weighted      = feats_a$squad_xg_weighted,
-                                   team_xa_weighted      = feats_a$squad_xa_weighted,
-                                   team_xgchain_weighted = feats_a$squad_xgchain_weighted,
-                                   opp_xg_weighted       = feats_b$squad_xg_weighted,
-                                   opp_depth_index       = feats_b$squad_depth_index,
-                                   is_home               = 1L
-                                 ), type = "response"), 1.2)
-
-      lambda_b <- ifelse(nrow(feats_b) > 0,
-                         predict(final_model,
-                                 newdata = tibble(
-                                   team_xg_weighted      = feats_b$squad_xg_weighted,
-                                   team_xa_weighted      = feats_b$squad_xa_weighted,
-                                   team_xgchain_weighted = feats_b$squad_xgchain_weighted,
-                                   opp_xg_weighted       = feats_a$squad_xg_weighted,
-                                   opp_depth_index       = feats_a$squad_depth_index,
-                                   is_home               = 0L
-                                 ), type = "response"), 1.0)
-
+      
+      # Safe lambda with fallback
+      lambda_a <- tryCatch(
+        predict(final_model,
+          newdata = tibble(
+            team_xg_weighted      = ifelse(nrow(feats_a) > 0, feats_a$squad_xg_weighted, 0.1),
+            team_xa_weighted      = ifelse(nrow(feats_a) > 0, feats_a$squad_xa_weighted, 0.05),
+            team_xgchain_weighted = ifelse(nrow(feats_a) > 0, feats_a$squad_xgchain_weighted, 0.1),
+            opp_xg_weighted       = ifelse(nrow(feats_b) > 0, feats_b$squad_xg_weighted, 0.1),
+            opp_depth_index       = ifelse(nrow(feats_b) > 0, feats_b$squad_depth_index, 0.5),
+            is_home               = 1L
+          ), type = "response"),
+        error = function(e) 1.2
+      )
+      
+      lambda_b <- tryCatch(
+        predict(final_model,
+          newdata = tibble(
+            team_xg_weighted      = ifelse(nrow(feats_b) > 0, feats_b$squad_xg_weighted, 0.1),
+            team_xa_weighted      = ifelse(nrow(feats_b) > 0, feats_b$squad_xa_weighted, 0.05),
+            team_xgchain_weighted = ifelse(nrow(feats_b) > 0, feats_b$squad_xgchain_weighted, 0.1),
+            opp_xg_weighted       = ifelse(nrow(feats_a) > 0, feats_a$squad_xg_weighted, 0.1),
+            opp_depth_index       = ifelse(nrow(feats_a) > 0, feats_a$squad_depth_index, 0.5),
+            is_home               = 0L
+          ), type = "response"),
+        error = function(e) 1.0
+      )
+      
+      # Ensure lambdas are valid
+      lambda_a <- ifelse(is.na(lambda_a) | !is.finite(lambda_a), 1.2, lambda_a)
+      lambda_b <- ifelse(is.na(lambda_b) | !is.finite(lambda_b), 1.0, lambda_b)
+      
       goals_a <- rpois(1, lambda_a)
       goals_b <- rpois(1, lambda_b)
-
-      # Update standings
+      
       if (goals_a > goals_b) {
         standings <- standings %>%
           mutate(
@@ -179,7 +180,7 @@ simulate_group_stage <- function(groups) {
             points = points + 3 * (team == team_b)
           )
       }
-
+      
       standings <- standings %>%
         mutate(
           gf     = gf + goals_a * (team == team_a) + goals_b * (team == team_b),
@@ -187,12 +188,12 @@ simulate_group_stage <- function(groups) {
           played = played + 1L * (team %in% c(team_a, team_b))
         )
     }
-
+    
     standings %>%
       mutate(gd = gf - ga) %>%
       arrange(desc(points), desc(gd), desc(gf))
   })
-
+  
   return(group_results)
 }
 

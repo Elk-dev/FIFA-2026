@@ -18,6 +18,7 @@ library(tidyverse)
 
 GCS_BUCKET    <- "wc2026-prediction-data-elkinhuertas"
 GCS_AVAILABLE <- FALSE   # flipped to TRUE if googleCloudStorageR loads cleanly
+FORCE_LOCAL <- TRUE      # set to FALSE to enable GCS
 
 DATASETS <- list(
   player_data        = "player_data.csv",
@@ -125,7 +126,7 @@ run_etl <- function() {
   log_msg("INFO", "========== ETL PIPELINE START ==========")
 
   # Check GCS availability
-  GCS_AVAILABLE <<- check_gcs()
+GCS_AVAILABLE <<- if (FORCE_LOCAL) FALSE else check_gcs()
 
   # Load and validate each dataset
   loaded <- list()

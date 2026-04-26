@@ -1,0 +1,6 @@
+Model,Type,CV,MAE,RMSE,Accuracy,Notes
+Logistic Regression,Classification,Lasso CV,—,—,48.9%,Reference project
+SVM (Linear),Classification,Grid CV,—,—,47.3%,Reference project
+Random Forest,Classification,MC Sim,—,—,58.2%,Reference project — best classifier
+XGBoost,Classification,MC Sim,—,—,56.4%,Reference project
+**Poisson Regression**,**Goal Model**,**Rolling CV**,0.8915,1.2079,**—**,**This project — scoreline distribution**

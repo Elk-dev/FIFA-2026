@@ -23,6 +23,8 @@ library(scales)
 library(gridExtra)
 library(ggtext)
 
+select <- dplyr::select
+
 if (!exists("simulation_results")) source("05_simulation.R")
 
 figures_dir <- file.path(dirname(getwd()), "docs", "figures")
