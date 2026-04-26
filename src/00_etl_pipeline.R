@@ -18,7 +18,7 @@ library(tidyverse)
 
 GCS_BUCKET    <- "wc2026-prediction-data-elkinhuertas"
 GCS_AVAILABLE <- FALSE   # flipped to TRUE if googleCloudStorageR loads cleanly
-FORCE_LOCAL <- TRUE      # set to FALSE to enable GCS
+FORCE_LOCAL <- !nchar(Sys.getenv("GITHUB_ACTIONS")) > 0
 
 DATASETS <- list(
   player_data        = "player_data.csv",
