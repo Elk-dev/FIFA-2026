@@ -4,7 +4,6 @@
 ![GCP](https://img.shields.io/badge/Cloud-Google_Cloud_Storage-4285F4?style=flat-square&logo=google-cloud)
 ![Terraform](https://img.shields.io/badge/IaC-Terraform-7B42BC?style=flat-square&logo=terraform)
 ![Status](https://img.shields.io/badge/Status-Complete-2DC653?style=flat-square)
-![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)
 
 > A statistical machine learning pipeline for predicting the 2026 FIFA World Cup winner using Poisson regression, Monte Carlo simulation, and cloud-native data infrastructure provisioned with Terraform.
 
