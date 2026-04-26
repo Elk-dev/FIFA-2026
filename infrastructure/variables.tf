@@ -18,3 +18,9 @@ variable "pipeline_sa_email" {
   description = "Service account email used by the R ETL pipeline to access GCS"
   type        = string
 }
+
+variable "github_repo" {
+  description = "GitHub repository in format owner/repo"
+  type        = string
+  default     = "Elk-dev/FIFA-2026"
+}

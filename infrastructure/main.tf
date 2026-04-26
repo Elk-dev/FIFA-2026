@@ -54,3 +54,38 @@ resource "google_storage_bucket_iam_member" "pipeline_rw" {
   role   = "roles/storage.objectAdmin"
   member = "serviceAccount:${var.pipeline_sa_email}"
 }
+
+# ---------------------------------------------------------------------------
+# Workload Identity Federation — Keyless GitHub Actions Authentication
+# ---------------------------------------------------------------------------
+
+resource "google_iam_workload_identity_pool" "github_pool" {
+  workload_identity_pool_id = "github-pool"
+  display_name              = "GitHub Actions Pool"
+  description               = "Identity pool for GitHub Actions CI/CD"
+  project                   = var.project_id
+}
+
+resource "google_iam_workload_identity_pool_provider" "github_provider" {
+  workload_identity_pool_id          = google_iam_workload_identity_pool.github_pool.workload_identity_pool_id
+  workload_identity_pool_provider_id = "github-provider"
+  project                            = var.project_id
+  display_name                       = "GitHub Provider"
+
+  attribute_mapping = {
+    "google.subject"       = "assertion.sub"
+    "attribute.repository" = "assertion.repository"
+  }
+
+  attribute_condition = "attribute.repository == 'Elk-dev/FIFA-2026'"
+
+  oidc {
+    issuer_uri = "https://token.actions.githubusercontent.com"
+  }
+}
+
+resource "google_service_account_iam_member" "github_wif_binding" {
+  service_account_id = "projects/${var.project_id}/serviceAccounts/${var.pipeline_sa_email}"
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github_pool.name}/attribute.repository/${var.github_repo}"
+}
